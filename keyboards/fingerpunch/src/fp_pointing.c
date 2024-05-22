@@ -32,6 +32,33 @@ static bool zooming_keycode_enabled = false;
 static bool zooming_layer_enabled = false;
 static bool zooming_hold = false;
 
+#ifdef POINTING_DEVICE_AUTO_MOUSE_ENABLE
+// Define all the fingerpunch specific mouse keycodes
+bool is_mouse_record_kb(uint16_t keycode, keyrecord_t* record) {
+    switch(keycode) {
+#ifndef FP_DISABLE_CUSTOM_KEYCODES
+        // See fp_keyhandler.h for full list
+        case FP_ACCEL_TOG:
+        case FP_SCROLL_ON:
+        case FP_SCROLL_OFF:
+        case FP_SCROLL_MOMENT:
+        case FP_SNIPE_TOG:
+        case FP_SNIPE_ON:
+        case FP_SNIPE_OFF:
+        case FP_SNIPE_MOMENT:
+        case FP_ZOOM_TOG:
+        case FP_ZOOM_ON:
+        case FP_ZOOM_OFF:
+        case FP_ZOOM_MOMENT:
+            return true;
+#endif
+        default:
+            return false;
+    }
+    return  is_mouse_record_user(keycode, record);
+}
+#endif
+
 #ifdef POINTING_DEVICE_COMBINED
 void fp_compile_check_combined_default_modes(void) {
     // assert that either both LEFT values are false or only one of them is true
@@ -288,6 +315,8 @@ uint32_t fp_zoom_unset_hold(uint32_t triger_time, void *cb_arg) {
 }
 
 report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
+    static int16_t scroll_buffer_x = 0;
+    static int16_t scroll_buffer_y = 0;
 #ifdef CONSOLE_ENABLE
     if (mouse_report.x != 0) {
         xprintf("fingerpunch mouse report x: %d\n", mouse_report.x);
@@ -297,8 +326,24 @@ report_mouse_t pointing_device_task_kb(report_mouse_t mouse_report) {
     }
 #endif
     if (fp_scroll_layer_get() || fp_scroll_keycode_get()) {
-        mouse_report.h = mouse_report.x;
-        mouse_report.v = -mouse_report.y;
+        #ifdef FP_POINTING_SCROLLING_X_REVERSED
+        scroll_buffer_x -= mouse_report.x;
+        #else
+        scroll_buffer_x += mouse_report.x;
+        #endif
+        #ifdef FP_POINTING_SCROLLING_Y_REVERSED
+        scroll_buffer_y += mouse_report.y;
+        #else
+        scroll_buffer_y -= mouse_report.y;
+        #endif
+        if (abs(scroll_buffer_x) > FP_POINTING_SCROLLING_THRESHOLD) {
+            mouse_report.h = scroll_buffer_x > 0 ? 1 : -1;
+            scroll_buffer_x = 0;
+        }
+        if (abs(scroll_buffer_y) > FP_POINTING_SCROLLING_THRESHOLD) {
+            mouse_report.v = scroll_buffer_y > 0 ? 1 : -1;
+            scroll_buffer_y = 0;
+        }
         mouse_report.x = 0;
         mouse_report.y = 0;
     } else if (fp_zoom_layer_get() || fp_zoom_keycode_get()) {
