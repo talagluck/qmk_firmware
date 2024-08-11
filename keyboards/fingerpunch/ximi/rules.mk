@@ -138,3 +138,8 @@ ifeq ($(strip $(PMW3360_ENABLE)), yes)
    QUANTUM_LIB_SRC += spi_master.c
    OPT_DEFS += -DFP_TRACKBALL_ENABLE
 endif
+
+# Check if KEYBOARD_HALF is set to left
+ifeq ($(strip $(LEFT_HALF)), yes)
+    OPT_DEFS += -DLEFT_HALF
+endif

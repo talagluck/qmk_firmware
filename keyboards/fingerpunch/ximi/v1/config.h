@@ -19,6 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // wiring of each half
 #define MATRIX_ROW_PINS { GP29, GP28, GP27, GP24 }
-#define MATRIX_COL_PINS { GP10, GP11, GP26, GP12, GP13, GP14, GP15, GP16 }
+
+#ifdef LEFT_HALF
+    #define MATRIX_COL_PINS { GP6, GP11, GP26, GP12, GP13, GP14, GP15, GP16 }
+#else
+    #define MATRIX_COL_PINS { GP10, GP11, GP26, GP12, GP13, GP14, GP15, GP16 }
+#endif
 
 #include "keyboards/fingerpunch/src/config_post.h"
